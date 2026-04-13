@@ -1,0 +1,50 @@
+
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:15-alpine
+    container_name: nutriscan_db
+    environment:
+      POSTGRES_USER: nutriscan
+      POSTGRES_PASSWORD: nutriscan_pass
+      POSTGRES_DB: nutriscan_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nutriscan"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: nutriscan_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # FastAPI backend
+  backend:
+    build: ./backend
+    container_name: nutriscan_backend
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app    # live reload — file changes apply instantly
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
