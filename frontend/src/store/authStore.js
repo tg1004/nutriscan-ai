@@ -18,21 +18,29 @@ const useAuthStore = create((set) => ({
           onboardingComplete: onboarding === 'true',
         })
       } else {
-        set({ isAuthenticated: false, isLoading: false })
+        // No token — not logged in, go to login screen
+        set({
+          isAuthenticated: false,
+          isLoading: false,
+          onboardingComplete: false,
+        })
       }
     } catch {
-      set({ isAuthenticated: false, isLoading: false })
+      set({ isAuthenticated: false, isLoading: false, onboardingComplete: false })
     }
   },
 
   login: async (tokens, user) => {
+    // Save tokens immediately
     await SecureStore.setItemAsync('access_token', tokens.access_token)
     await SecureStore.setItemAsync('refresh_token', tokens.refresh_token)
-    const onboarding = tokens.onboarding_complete ?? false
-    if (onboarding) {
-      await SecureStore.setItemAsync('onboarding_complete', 'true')
-    }
-    set({ user, isAuthenticated: true, onboardingComplete: onboarding })
+    // New users always go to onboarding
+    await SecureStore.setItemAsync('onboarding_complete', 'false')
+    set({
+      user,
+      isAuthenticated: true,
+      onboardingComplete: false,
+    })
   },
 
   completeOnboarding: async () => {
@@ -46,7 +54,11 @@ const useAuthStore = create((set) => ({
     await SecureStore.deleteItemAsync('access_token')
     await SecureStore.deleteItemAsync('refresh_token')
     await SecureStore.deleteItemAsync('onboarding_complete')
-    set({ user: null, isAuthenticated: false, onboardingComplete: false })
+    set({
+      user: null,
+      isAuthenticated: false,
+      onboardingComplete: false,
+    })
   },
 }))
 

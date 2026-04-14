@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   ScrollView, ActivityIndicator, Switch
 } from 'react-native'
+import * as SecureStore from 'expo-secure-store'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { userAPI } from '../services/api'
 import useAuthStore from '../store/authStore'
@@ -105,6 +106,12 @@ export default function OnboardingScreen() {
     setLoading(true)
     setError('')
     try {
+      const token = await SecureStore.getItemAsync('access_token')
+      if (!token) {
+        setError('Session expired. Please log in again.')
+        setLoading(false)
+        return
+    }
       await userAPI.updateProfile({
         gender: gender.toLowerCase(),
         age: parseInt(age),
